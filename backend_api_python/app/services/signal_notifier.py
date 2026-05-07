@@ -566,7 +566,7 @@ class SignalNotifier:
 
         headers: Dict[str, str] = {
             "Content-Type": "application/json",
-            "User-Agent": "QuantDinger/1.0 (+https://www.quantdinger.com)",
+            "User-Agent": "TradingBot/1.0",
         }
 
         # Per-strategy header overrides (optional)
@@ -663,7 +663,7 @@ class SignalNotifier:
             embed["footer"] = {"text": f"pending_order_id={int(trace.get('pending_order_id'))}"}
         headers = {
             "Content-Type": "application/json",
-            "User-Agent": "QuantDinger/1.0 (+https://www.quantdinger.com)",
+            "User-Agent": "TradingBot/1.0",
         }
 
         def _post(payload_json: Dict[str, Any]) -> requests.Response:

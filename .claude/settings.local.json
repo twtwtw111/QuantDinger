@@ -1,0 +1,42 @@
+{
+  "permissions": {
+    "allow": [
+      "WebSearch",
+      "Bash(npm --version)",
+      "Bash(npm install *)",
+      "Bash(ccusage *)",
+      "Bash(uv tool *)",
+      "Bash(claude-monitor --help)",
+      "WebFetch(domain:github.com)",
+      "WebFetch(domain:ccusage.com)",
+      "Bash(cs *)",
+      "Bash(git clone *)",
+      "Bash(cp *)",
+      "Bash(gh auth *)",
+      "Bash(brew install *)",
+      "Bash(gh repo *)",
+      "Bash(git remote *)",
+      "Bash(ollama list *)",
+      "Bash(ollama search *)",
+      "WebFetch(domain:dev.to)",
+      "WebFetch(domain:levelup.gitconnected.com)",
+      "Bash(xargs -I {} basename {})",
+      "WebFetch(domain:medium.com)",
+      "WebFetch(domain:www.deployhq.com)",
+      "WebFetch(domain:dometrain.com)",
+      "WebFetch(domain:rosmur.github.io)",
+      "WebFetch(domain:miraflow.ai)",
+      "WebFetch(domain:raw.githubusercontent.com)",
+      "WebFetch(domain:gist.github.com)",
+      "Bash(sysctl hw.memsize)",
+      "Bash(awk '{print $2/1073741824 \" GB\"}')",
+      "Bash(ps aux *)",
+      "Bash(vm_stat)",
+      "Bash(docker stats *)",
+      "Bash(docker-compose ps *)",
+      "Bash(docker-compose logs *)",
+      "Bash(python3 *)",
+      "Bash(docker-compose restart *)"
+    ]
+  }
+}

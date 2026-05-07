@@ -193,8 +193,12 @@ class LLMService:
         
         # OpenRouter specific headers
         if "openrouter" in base_url:
-            headers["HTTP-Referer"] = "https://quantdinger.com"
-            headers["X-Title"] = "QuantDinger Analysis"
+            referer = os.getenv("OPENROUTER_REFERER", "")
+            title = os.getenv("OPENROUTER_TITLE", "AI Quant Analysis")
+            if referer:
+                headers["HTTP-Referer"] = referer
+            if title:
+                headers["X-Title"] = title
 
         data = {
             "model": model,
