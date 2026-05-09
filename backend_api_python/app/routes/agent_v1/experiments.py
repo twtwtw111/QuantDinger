@@ -59,7 +59,7 @@ def submit_pipeline():
         request_payload=payload,
         runner=_run,
     )
-    return envelope(job, message="queued"), 202
+    return envelope(job, message="queued", http=202)
 
 
 @agent_v1_bp.route("/experiments/structured-tune", methods=["POST"])
@@ -83,7 +83,7 @@ def submit_structured_tune():
         request_payload=payload,
         runner=_run,
     )
-    return envelope(job, message="queued"), 202
+    return envelope(job, message="queued", http=202)
 
 
 @agent_v1_bp.route("/experiments/ai-optimize", methods=["POST"])
@@ -118,4 +118,4 @@ def submit_ai_optimize():
         request_payload=payload,
         runner=_run,
     )
-    return envelope(job, message="queued"), 202
+    return envelope(job, message="queued", http=202)

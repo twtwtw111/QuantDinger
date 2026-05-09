@@ -93,6 +93,7 @@ def load_addon_config() -> Dict[str, Any]:
         ('CUSTOM_API_KEY', 'custom.api_key', 'string'),
         ('CUSTOM_API_URL', 'custom.base_url', 'string'),
         ('CUSTOM_MODEL', 'custom.model', 'string'),
+        ('CUSTOM_TIMEOUT', 'custom.timeout', 'int'),
 
         # MiniMax
         ('MINIMAX_API_KEY', 'minimax.api_key', 'string'),

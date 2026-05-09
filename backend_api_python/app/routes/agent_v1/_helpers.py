@@ -6,7 +6,7 @@ from typing import Any, Optional
 from flask import jsonify, request
 
 
-def envelope(data: Any, *, message: str = "ok", code: int = 0) -> tuple:
+def envelope(data: Any, *, message: str = "ok", code: int = 0, http: int = 200) -> tuple:
     """Standard agent-facing response envelope.
 
     Distinct from the legacy human envelope (`code: 1, msg, data`) so client
@@ -16,7 +16,7 @@ def envelope(data: Any, *, message: str = "ok", code: int = 0) -> tuple:
         "code": code,
         "message": message,
         "data": data,
-    }), 200
+    }), http
 
 
 def error(code: int, message: str, *, details: Any = None, retriable: bool = False, http: int = 400):

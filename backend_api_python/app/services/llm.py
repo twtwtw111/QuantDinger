@@ -468,15 +468,27 @@ class LLMService:
         
         for current_model in models_to_try:
             try:
+                call_messages = messages
+                if p == LLMProvider.CUSTOM:
+                    # Qwen3 thinking models need /no_think to skip chain-of-thought
+                    # and respond within reasonable time; without it the model may
+                    # spend 400+ seconds on internal reasoning before replying.
+                    call_messages = []
+                    for msg in messages:
+                        if msg.get("role") == "user":
+                            msg = dict(msg)
+                            msg["content"] = "/no_think\n" + msg["content"]
+                        call_messages.append(msg)
+
                 if p == LLMProvider.GOOGLE:
                     return self._call_google_gemini(
-                        messages, current_model, temperature,
+                        call_messages, current_model, temperature,
                         api_key, base_url, timeout
                     )
                 else:
                     # OpenAI-compatible providers
                     return self._call_openai_compatible(
-                        messages, current_model, temperature,
+                        call_messages, current_model, temperature,
                         api_key, base_url, timeout,
                         use_json_mode=use_json_mode
                     )

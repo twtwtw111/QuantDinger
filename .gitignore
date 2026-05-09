@@ -85,3 +85,7 @@ QuantDinger-Vue-src/src/locales/lang/*.bak
 # Docker
 # ========================
 docker-compose.override.yml
+
+# 本地资料（含 API Key，勿提交）
+资料.txt
+.mcp.json
