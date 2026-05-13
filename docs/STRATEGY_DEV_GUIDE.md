@@ -1267,3 +1267,54 @@ Each `signal` item commonly contains:
 6. Promote to `ScriptStrategy` only when you truly need runtime position logic.
 7. Move to paper or live trading only after configuration, credentials, and market semantics are verified.
 
+---
+
+## 14. Parameter Grid Search via `submit_structured_tune`
+
+Use `submit_structured_tune` (MCP) or `POST /api/agent/v1/experiments/structured-tune` to run batch backtests over a parameter grid without writing a loop.
+
+### 14.1 Payload format
+
+```python
+{
+  "base": {
+    "code": "...",           # IndicatorStrategy code
+    "market": "Crypto",      # market value, NOT exchange name (e.g. "Crypto", not "binance")
+    "symbol": "BTC/USDT",
+    "timeframe": "1d",
+    "startDate": "2022-01-01",   # camelCase, not start_date
+    "endDate":   "2026-05-10",   # camelCase, not end_date
+    "initialCapital": 10000,     # camelCase
+    "commission": 0.001,
+    "slippage":   0.001,
+    "tradeDirection": "long",    # camelCase
+    "indicatorParams": {         # default values for @param fields
+      "fast_len": 12,
+      "slow_len": 26
+    }
+  },
+  "parameterSpace": {
+    "indicator_params.fast_len": [8, 12, 21],   # snake_case prefix for @param fields
+    "indicator_params.slow_len": [21, 26, 55],
+    "strategyConfig.stopLossPct": [0.02, 0.03]  # camelCase prefix for @strategy fields
+  }
+}
+```
+
+### 14.2 Key rules
+
+| 字段类型 | parameterSpace 路径前缀 | 示例 |
+|---------|----------------------|------|
+| `# @param` 指标参数 | `indicator_params.` | `indicator_params.fast_len` |
+| `# @strategy` 风控参数 | `strategyConfig.` | `strategyConfig.stopLossPct` |
+
+- `base.market` 必须是平台市场名（`Crypto` / `USStock` 等），不是交易所名
+- `base` 里的日期和资金字段全部用 **camelCase**
+- `indicatorParams` 中的默认值在 baseline 回测中使用；各 variant 通过 `indicator_params.xxx` 路径覆盖
+- 结果在 `rankedStrategies` 里按综合评分排序，每条含 `result.sharpeRatio` / `result.maxDrawdown` 等字段
+
+### 14.3 Known limitations（截至 2026-05）
+
+- `strategyConfig.stopLossPct` 通过 parameterSpace 注入后结果与 baseline 完全相同，疑似注入路径未生效，待查
+- 单次最多 48 个 variant（`evolution.maxVariants` 默认值）
+

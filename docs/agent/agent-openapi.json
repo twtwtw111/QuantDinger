@@ -182,7 +182,7 @@
         "responses": { "200": { "description": "OK" }, "404": { "description": "Not found" } }
       },
       "patch": {
-        "summary": "Update a strategy (status='running' requires T scope)",
+        "summary": "Update a strategy (status='running' requires T scope). status field is written correctly as of commit a76e11d.",
         "x-scope-class": "W",
         "parameters": [{ "in": "path", "name": "strategy_id", "required": true, "schema": { "type": "integer" } }],
         "requestBody": { "required": true, "content": { "application/json": { "schema": { "type": "object" } } } },
