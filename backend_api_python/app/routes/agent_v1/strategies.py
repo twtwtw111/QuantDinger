@@ -118,13 +118,13 @@ def update_strategy(strategy_id: int):
 
     try:
         ok = _strategy_service.update_strategy(strategy_id, body, user_id=current_user_id())
-        if ok and new_status:
+        if new_status:
             _strategy_service.update_strategy_status(strategy_id, new_status, user_id=current_user_id())
     except Exception as exc:
         logger.error(f"agent_v1/strategies update failed: {exc}", exc_info=True)
         return error(500, "update_strategy failed", details=str(exc), http=500)
 
-    if not ok:
+    if not ok and not new_status:
         return error(404, "Strategy not found or no fields updated", http=404)
 
     row = _strategy_service.get_strategy(strategy_id, user_id=current_user_id())

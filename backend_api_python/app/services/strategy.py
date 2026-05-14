@@ -642,8 +642,8 @@ class StrategyService:
                 cur.close()
             return True
         except Exception as e:
-            logger.error(f"update_strategy_status failed: {e}")
-            return False
+            logger.error(f"update_strategy_status failed: {e}", exc_info=True)
+            raise
 
     def _safe_json_loads(self, value: Any, default: Any):
         """Load JSON string into Python object (local deployment: plaintext only)."""
