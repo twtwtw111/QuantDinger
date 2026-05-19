@@ -273,6 +273,12 @@ def create_app(config_name='default'):
         except Exception:
             pass
         restore_running_strategies()
+        # Strategy Intelligence Monitor: 跨策略全局信号分析，每15分钟扫一次
+        try:
+            from app.services.strategy_intelligence_monitor import start_strategy_intelligence
+            start_strategy_intelligence()
+        except Exception:
+            pass
     
     return app
 

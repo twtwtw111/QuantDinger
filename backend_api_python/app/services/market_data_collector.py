@@ -1420,8 +1420,28 @@ class MarketDataCollector:
         if result["long_short_ratio"] is not None:
             result["source"] = "coinglass"
 
+        # Taker 买卖比（主动买入量 / 主动卖出量，< 0.5 说明卖压主导）
+        taker_payload = self._coinglass_get(
+            "/api/futures/takerLongShortRatio",
+            {"symbol": symbol, "interval": "1h", "limit": 1},
+            ttl_sec=90,
+        )
+        taker_latest = self._pick_latest_item(taker_payload)
+        result["taker_buy_sell_ratio"] = self._pick_number(
+            taker_latest or taker_payload,
+            "buy_vol_ratio", "buyVolRatio", "taker_buy_sell_ratio", "buySellRatio",
+        )
+        if result["taker_buy_sell_ratio"] is not None:
+            result["source"] = "coinglass"
+
         # Binance 作为部分衍生品字段兜底。
-        if result["funding_rate"] is None or result["open_interest"] is None or result["long_short_ratio"] is None:
+        missing = (
+            result["funding_rate"] is None
+            or result["open_interest"] is None
+            or result["long_short_ratio"] is None
+            or result["taker_buy_sell_ratio"] is None
+        )
+        if missing:
             pair = f"{symbol}USDT"
             result = self._fill_crypto_derivatives_from_binance(pair, result)
         return result
@@ -1484,12 +1504,26 @@ class MarketDataCollector:
         except Exception as e:
             logger.debug(f"Binance long/short fallback failed for {pair}: {e}")
 
+        # Taker 买卖比 Binance fallback
+        try:
+            taker_resp = requests.get(
+                "https://fapi.binance.com/futures/data/takerlongshortRatio",
+                params={"symbol": pair, "period": "1h", "limit": 1},
+                timeout=8,
+            )
+            taker_resp.raise_for_status()
+            items = taker_resp.json() or []
+            if items:
+                fallback["taker_buy_sell_ratio"] = self._safe_num(items[-1].get("buySellRatio"))
+        except Exception as e:
+            logger.debug(f"Binance taker ratio fallback failed for {pair}: {e}")
+
         self._cache_set(cache_key, fallback, 120)
         merged = dict(result)
         for k, v in fallback.items():
             if merged.get(k) is None and v is not None:
                 merged[k] = v
-        if any(merged.get(k) is not None for k in ("funding_rate", "open_interest", "long_short_ratio")) and not merged.get("source"):
+        if any(merged.get(k) is not None for k in ("funding_rate", "open_interest", "long_short_ratio", "taker_buy_sell_ratio")) and not merged.get("source"):
             merged["source"] = "binance_public"
         return merged
 

@@ -63,9 +63,11 @@ class StrategyAutoAdjuster:
     ) -> None:
         """K 线收盘时调用。立即返回，绝不阻塞策略线程。"""
         try:
-            # 1. 先消费上一次 LLM 线程排队的调整
+            # 1. 消费 StrategyIntelligenceMonitor 写入的指令（DB，最高优先级）
+            self._apply_intelligence_directives(strategy_id, trading_config)
+            # 2. 消费上一次本地 LLM 线程排队的调整
             self._apply_pending(strategy_id, trading_config)
-            # 2. 同步规则检查 + 异步 LLM 触发
+            # 3. 本地同步规则检查 + 异步 LLM 触发
             self._check(strategy_id, df, trading_config, ai_model_config, symbol, timeframe)
         except Exception as exc:
             logger.warning(f"[AutoAdjuster:{strategy_id}] on_kline_close error: {exc}")
@@ -79,6 +81,45 @@ class StrategyAutoAdjuster:
     # ─────────────────────────────────────────────────────────────────────
     # 内部逻辑
     # ─────────────────────────────────────────────────────────────────────
+
+    def _apply_intelligence_directives(self, strategy_id: int, trading_config: Dict[str, Any]) -> None:
+        """消费 StrategyIntelligenceMonitor 写入的指令并执行。"""
+        try:
+            from app.services.strategy_intelligence_monitor import pop_pending_directives
+            directives = pop_pending_directives(strategy_id)
+        except Exception:
+            return
+        if not directives:
+            return
+
+        orig = self._get_state(strategy_id).get('original_entry_pct') or self._read_entry_pct(trading_config)
+        for d in directives:
+            action = d.get('action', '')
+            reason = d.get('reason', '')
+            source = d.get('source', '')
+            if action == 'pause_entry':
+                self._write_to_config(trading_config, {'entry_pct': 0.0})
+                self._persist_to_db(strategy_id, {'entry_pct': 0.0})
+                self._update_state(strategy_id, {'paused_by_adjuster': True, 'pause_reason': f'intel:{source}'})
+                self._log(strategy_id, f"[Intelligence] pause_entry — {reason}")
+            elif action == 'resume_entry':
+                self._write_to_config(trading_config, {'entry_pct': orig})
+                self._persist_to_db(strategy_id, {'entry_pct': orig})
+                self._update_state(strategy_id, {'paused_by_adjuster': False, 'pause_reason': ''})
+                self._log(strategy_id, f"[Intelligence] resume_entry — {reason}")
+            elif action == 'reduce_position':
+                current = self._read_entry_pct(trading_config)
+                reduced = round(current * 0.5, 4) if current > orig * 0.3 else current
+                self._write_to_config(trading_config, {'entry_pct': reduced})
+                self._persist_to_db(strategy_id, {'entry_pct': reduced})
+                self._log(strategy_id, f"[Intelligence] reduce_position {current:.2f}→{reduced:.2f} — {reason}")
+            elif action == 'stop_strategy':
+                self._log(strategy_id, f"[Intelligence] stop_strategy triggered — {reason}")
+                try:
+                    from app.services.trading_executor import get_trading_executor
+                    get_trading_executor().stop_strategy(strategy_id)
+                except Exception as exc:
+                    logger.warning(f"[AutoAdjuster:{strategy_id}] stop_strategy failed: {exc}")
 
     def _apply_pending(self, strategy_id: int, trading_config: Dict[str, Any]) -> None:
         """消费 LLM 线程排队的参数调整（在执行器线程中安全执行）。"""
