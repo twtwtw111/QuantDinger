@@ -483,7 +483,12 @@ class TradingExecutor:
                 # 从运行列表中移除（线程会在下次循环检查状态时退出）
                 del self.running_strategies[strategy_id]
                 self._exchange_fee_cache.pop(strategy_id, None)
-                
+                try:
+                    from app.services.strategy_auto_adjuster import get_auto_adjuster
+                    get_auto_adjuster().clear_state(strategy_id)
+                except Exception:
+                    pass
+
                 logger.info(f"Strategy {strategy_id} stopped")
                 self._console_print(f"[strategy:{strategy_id}] stopped (requested)")
                 append_strategy_log(strategy_id, "info", "Strategy stop requested (run flag cleared)")
@@ -1165,6 +1170,19 @@ class TradingExecutor:
                                                     current_close,
                                                     highest_price=new_hp
                                                 )
+                                # ── Auto-adjust on K-line close (non-blocking) ──
+                                try:
+                                    from app.services.strategy_auto_adjuster import get_auto_adjuster
+                                    get_auto_adjuster().on_kline_close(
+                                        strategy_id=strategy_id,
+                                        df=df,
+                                        trading_config=trading_config,
+                                        ai_model_config=ai_model_config,
+                                        symbol=symbol,
+                                        timeframe=timeframe,
+                                    )
+                                except Exception as _adj_err:
+                                    logger.debug(f"AutoAdjuster error (non-fatal): {_adj_err}")
                     else:
                         # ============================================
                         # 3. 非K线更新 tick
